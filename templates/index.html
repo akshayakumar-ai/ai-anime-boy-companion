@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ character_name }} – AI Anime Boy Companion</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22><text y=%2226%22 font-size=%2226%22>✨</text></svg>">
+</head>
+<body>
+    <!-- Ambient dreamy background gradient shapes -->
+    <div class="ambient-bg">
+        <div class="ambient-blob blob-1"></div>
+        <div class="ambient-blob blob-2"></div>
+        <div class="ambient-blob blob-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Top Navigation & Status Bar -->
+        <header class="top-nav">
+            <div class="brand">
+                <div class="brand-avatar">✨</div>
+                <div class="brand-text">
+                    <h1>{{ character_name }}</h1>
+                    <p>AI Virtual Companion & Expression System</p>
+                </div>
+            </div>
+
+            <div class="nav-badges">
+                <!-- Status indicator -->
+                <div id="statusBadge" class="status-pill status-idle">Idle</div>
+
+                <!-- Current Avatar Emotion -->
+                <div id="emotionBadge" class="emotion-pill">
+                    <span class="emo-icon">😊</span>
+                    <span class="emo-name">HAPPY</span>
+                </div>
+
+                <!-- Detected User Emotion -->
+                <div id="userEmotionBadge" class="user-emotion-pill">
+                    <span class="emo-icon">💬</span> You: Neutral
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <button id="stopSpeechBtn" class="icon-btn stop-btn" title="Stop speaking immediately">
+                    <span class="icon">⏹️</span>
+                    <span>Stop</span>
+                </button>
+
+                <button id="muteBtn" class="icon-btn" title="Toggle audio voice playback">
+                    <span class="icon">🔊</span>
+                    <span>Voice On</span>
+                </button>
+
+                <button id="toggleHistoryBtn" class="icon-btn" title="Open conversation history">
+                    <span class="icon">💬</span>
+                    <span>History</span>
+                </button>
+
+                <button id="settingsBtn" class="icon-btn" title="Settings & API Keys">
+                    <span class="icon">⚙️</span>
+                    <span>Settings</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Character Stage -->
+        <main class="stage-container">
+            <div class="canvas-wrapper">
+                <canvas id="characterCanvas"></canvas>
+            </div>
+
+            <!-- Floating Subtitle Bubble (Placed cleanly below character to never cover his face) -->
+            <div id="subtitles" class="subtitle-bubble hidden">
+                <div id="subtitleSpeaker" class="subtitle-speaker">{{ character_name }}</div>
+                <div id="subtitleText" class="subtitle-text"></div>
+            </div>
+        </main>
+
+        <!-- Expression Tester Quick Toolbar -->
+        <section class="expression-toolbar">
+            <span class="toolbar-title">13 Real-Time Facial Expressions (Click to Test)</span>
+            <div class="chips-scroll">
+                {% for key, val in emotions.items() %}
+                <button class="emo-chip" data-emotion="{{ key }}">
+                    <span>{{ val.icon }}</span>
+                    <span>{{ val.label }}</span>
+                </button>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Bottom Controls Dock -->
+        <footer class="bottom-dock">
+            <!-- Push-to-Talk Mic Button -->
+            <div class="mic-btn-container">
+                <button id="micBtn" class="mic-btn" title="Click to speak (Two-Way Voice)">
+                    🎤
+                </button>
+                <div class="mic-ripple"></div>
+            </div>
+
+            <!-- Text Input Bar -->
+            <div class="input-group">
+                <input type="text" id="textInput" placeholder="Speak or type a message to {{ character_name }}..." autocomplete="off">
+                <button id="sendBtn" class="send-btn" title="Send message">
+                    ➤
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Slide-out Conversation History Drawer -->
+    <aside id="historyPanel" class="history-panel">
+        <div class="panel-header">
+            <h2>Conversation History</h2>
+            <div class="panel-header-actions">
+                <button id="clearHistoryBtn" class="icon-btn" title="Clear all chat messages">🗑️ Clear</button>
+                <button id="closeHistoryBtn" class="icon-btn" title="Close panel">✕</button>
+            </div>
+        </div>
+        <div id="historyContainer" class="history-container">
+            <!-- Chat bubbles dynamically appended here -->
+        </div>
+    </aside>
+
+    <!-- Settings & API Key Modal -->
+    <div id="settingsModal" class="modal-overlay modal-hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Settings & Voice Configuration</h3>
+                <button id="closeSettingsBtn" class="icon-btn">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="voiceSelect">Neural Voice (Edge-TTS)</label>
+                    <select id="voiceSelect">
+                        {% for v_id, v_info in voices.items() %}
+                        <option value="{{ v_id }}" {% if v_id == current_voice %}selected{% endif %}>
+                            {{ v_info.name }} ({{ v_info.lang }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="form-help">High-quality neural speech synthesis runs freely without any API keys.</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="groqKeyInput">Groq API Key (Optional - Ultra Fast Llama 3.3)</label>
+                    <input type="password" id="groqKeyInput" placeholder="gsk_...">
+                    <p class="form-help">Free API key available at console.groq.com</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="openaiKeyInput">OpenAI API Key (Optional)</label>
+                    <input type="password" id="openaiKeyInput" placeholder="sk-...">
+                </div>
+
+                <div class="form-group">
+                    <label for="geminiKeyInput">Google Gemini API Key (Optional)</label>
+                    <input type="password" id="geminiKeyInput" placeholder="AIza...">
+                </div>
+
+                <div class="form-group">
+                    <p class="form-help" style="color: #6d28d9; font-weight: 500;">
+                        💡 Note: If no API key is provided, {{ character_name }} operates using his built-in offline anime persona engine with full conversational intelligence!
+                    </p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="saveSettingsBtn" class="btn-primary">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Scripts -->
+    <script src="/static/js/character.js?v=4"></script>
+    <script src="/static/js/audio.js?v=4"></script>
+    <script src="/static/js/chat.js?v=4"></script>
+    <script src="/static/js/app.js?v=4"></script>
+</body>
+</html>
